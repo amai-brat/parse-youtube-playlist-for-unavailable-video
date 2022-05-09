@@ -5,6 +5,7 @@ import os
 import time
 import sys
 
+#если удалили ролик из плейлиста, не выводит
 
 def parsed_playlist(playlist_id="PLQE335N_hu3LfshfBTeBpk16Lm6Pj-fjT", show=False):
     main_dict = dict(
@@ -43,7 +44,7 @@ def parsed_playlist(playlist_id="PLQE335N_hu3LfshfBTeBpk16Lm6Pj-fjT", show=False
 
 def show_difference_between_playlists(curr, prev):
     print('Playlist: ' + curr['playlist_id'])
-    print('Current playlist: ' + curr['date'])
+    print('Current  playlist: ' + curr['date'])
     print('Previous playlist: ' + prev['date'])
     for video_id in curr['items']:
         if video_id in prev['items']:
@@ -60,16 +61,29 @@ def show_unavailable_videos(curr):
             print('{:04}: {} {}'.format(*curr['items'][video_id].values(), video_id))
 
 def main():
+    playlist = input('Enter playlist id or url: ')
+
     PLAYLIST_ID = "PLQE335N_hu3LfshfBTeBpk16Lm6Pj-fjT" 
     try:
-        k = max([int(file.split('_')[-1]) for file in os.listdir() if file.startswith(f'playlist_{PLAYLIST_ID}_')])+1
+        k = max([int(file.split('_')[-1][:4]) for file in os.listdir() if file.startswith(f'playlist_{PLAYLIST_ID}_')])+1
     except:
         k = 0
-    curr_file = open(f'playlist_{PLAYLIST_ID}_{k:04}.json', 'a+')
-    json.dump(parsed_playlist(PLAYLIST_ID, 1), curr_file, indent=4)
+    curr_file = open(f'playlist_{PLAYLIST_ID}_{k:04}.json', 'w')
+    json.dump(parsed_playlist(PLAYLIST_ID, 0), curr_file, indent=4)
     curr_file.close()
-    show_unavailable_videos(json.load(open(f'playlist_{PLAYLIST_ID}_{k:04}.json')))
 
+    choice = input('''Enter number: 
+    1. Show differences between current playlist and previous
+    2. Show unavailable videos now
+
+>>> ''')
+    if choice == 1:
+        curr = json.load(open(f'playlist_{PLAYLIST_ID}_{k:04}.json'))
+        prev = json.load(open(f'playlist_{PLAYLIST_ID}_{k-1:04}.json'))
+        show_diference_between_playlists(curr, prev)
+    if choice == 2:
+        curr = json.load(open(f'playlist_{PLAYLIST_ID}_{k:04}.json'))
+        show_unavailable_videos(curr)
 
 if __name__ == '__main__':
     main()
