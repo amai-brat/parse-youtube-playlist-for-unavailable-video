@@ -1,13 +1,18 @@
-from googleapiclient.discovery import build
-from config import API_KEY
 from urllib.parse import urlparse, parse_qs
+from roflan import get_parsed_playlist_without_api
 import json
 import os
 import time
 import sys
 
 
-def get_parsed_playlist(playlist_id="PLQE335N_hu3LfshfBTeBpk16Lm6Pj-fjT", show=False):
+'''
+Deprecated
+
+from googleapiclient.discovery import build
+from config import API_KEY
+
+def get_parsed_playlist(playlist_id, show=False):
     main_dict = dict(
             playlist_id=playlist_id,
             date=time.ctime(),
@@ -46,7 +51,7 @@ def get_parsed_playlist(playlist_id="PLQE335N_hu3LfshfBTeBpk16Lm6Pj-fjT", show=F
             break
     if to_exit: sys.exit('Something went wrong: ' + to_exit)
     return main_dict
-
+'''
 
 def show_difference_between_backups(m, n):
     print('<->')
@@ -72,7 +77,7 @@ def show_difference_between_backups(m, n):
 
 def show_unavailable_videos(curr):
     print('<->')
-    reasons = ['Deleted video', 'Private video']
+    reasons = ['Deleted video', 'Private video', '[Deleted video]', '[Private video]']
     for video_id in curr['items']:
         if curr['items'][video_id]['title'] in reasons:
             print('{:04}: {} https://www.youtube.com/watch?v={}'.format(*curr['items'][video_id].values(), video_id))
@@ -91,6 +96,7 @@ def existing_playlists_in_path(path='.'):
 
 
 def main():
+    PLAYLIST_ID = ''
     fapah = existing_playlists_in_path('.')
     if fapah:
         print('Playlists, which have backups: ')
@@ -98,14 +104,16 @@ def main():
         for pl in fapah:
             _k += 1
             print(f'#{_k}. {pl}')
-        playlist = input('Enter playlist id or url or num (e.g. #1): ')
-        if playlist[0] == '#':
+        playlist = input('Enter num (e.g. #1, #2) or something else, if you want to add new playlist: ')
+        if playlist and playlist[0] == '#':
             PLAYLIST_ID = fapah[(int(playlist[1:])-1)%len(fapah)]
-        else:
-            PLAYLIST_ID = playlist_url_handler(playlist)
-    else:
+    if not PLAYLIST_ID:
         playlist = input('Enter playlist id or url: ')
         PLAYLIST_ID = playlist_url_handler(playlist)
+        while len(PLAYLIST_ID) != 34:
+            print('Try again')
+            playlist = input('Enter playlist id or url: ')
+            PLAYLIST_ID = playlist_url_handler(playlist)
 
     backup_yes_no = input('Make new backup: [y/n] ')
     try:
@@ -115,7 +123,7 @@ def main():
     if backup_yes_no and (backup_yes_no[0] == 'y' or backup_yes_no == '1'):
         print('Wait...')
         k += 1
-        parsed_playlist = get_parsed_playlist(PLAYLIST_ID,0)
+        parsed_playlist = get_parsed_playlist_without_api(PLAYLIST_ID,0)
         curr_file = open(f'playlist_{PLAYLIST_ID}_{k:04}.json', 'w')
         json.dump(parsed_playlist, curr_file, indent=4)
         curr_file.close()
